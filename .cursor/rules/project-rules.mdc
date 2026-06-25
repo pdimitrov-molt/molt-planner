@@ -1,0 +1,71 @@
+# MOLT Planner Development Rules
+
+## General
+
+- Always use TypeScript.
+- Never use "any".
+- Use App Router only.
+- Prefer Server Components.
+- Use Server Actions for mutations.
+- Use shadcn/ui components.
+- Maximum 250 lines per file.
+- One responsibility per component.
+
+## Architecture
+
+Feature-first architecture.
+
+features/
+    projects/
+    clients/
+    rooms/
+    planner/
+    dashboard/
+
+Each feature contains:
+- components
+- actions
+- repository
+- types
+- validation
+
+Never access Supabase directly from UI.
+
+Always use Repository Pattern.
+
+## UI
+
+Use Tailwind.
+
+Use shadcn/ui.
+
+No inline styles.
+
+## Naming
+
+English only.
+
+PascalCase components.
+
+camelCase functions.
+
+No abbreviations.
+
+## Database
+
+Every table has:
+
+id
+
+created_at
+
+updated_at
+
+Soft delete ready.
+
+## Goal
+
+This project is an AI-powered operating system for interior design studios.
+
+Never optimize for generic CRUD.
+Always optimize for designer workflow.
