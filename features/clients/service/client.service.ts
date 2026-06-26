@@ -4,7 +4,9 @@ import { ClientRepository } from "@/features/clients/repository/client.repositor
 import type { Client } from "@/features/clients/types/client";
 import {
   createClientSchema,
+  updateClientSchema,
   type CreateClientInput,
+  type UpdateClientInput,
 } from "@/features/clients/validation/client.schema";
 import { bg } from "@/src/i18n/bg";
 
@@ -22,6 +24,11 @@ export class ClientService {
   async createClient(input: CreateClientInput): Promise<Client> {
     const validatedInput = createClientSchema.parse(input);
     return this.repository.create(validatedInput);
+  }
+
+  async updateClient(input: UpdateClientInput): Promise<Client> {
+    const validatedInput = updateClientSchema.parse(input);
+    return this.repository.update(validatedInput);
   }
 
   static isValidationError(error: unknown): error is ZodError {

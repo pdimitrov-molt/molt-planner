@@ -18,7 +18,7 @@ export function IntakeStepEstimate({ result }: IntakeStepEstimateProps) {
     <div className="grid gap-8">
       <div className="surface-panel p-6">
         <p className="font-medium">
-          {bg.intake.estimate.title(result.project_type_label)}
+          {bg.intake.estimate.title(result.classification_label)}
         </p>
         <p className="text-sm text-muted-foreground">{result.scope_summary}</p>
       </div>

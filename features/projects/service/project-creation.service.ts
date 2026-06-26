@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 
 import { ClientRepository } from "@/features/clients/repository/client.repository";
+import { createClientSchema } from "@/features/clients/validation/client.schema";
 import { PhaseRepository } from "@/features/phases/repository/phase.repository";
 import { ProjectRepository } from "@/features/projects/repository/project.repository";
 import type { Project } from "@/features/projects/types/project";
@@ -32,8 +33,10 @@ export class ProjectCreationService {
       });
 
       const projectPayload = normalizeWizardProjectInput(validatedInput.project);
+      const projectNumber = await this.projectRepository.getNextProjectNumber();
       const project = await this.projectRepository.create({
         client_id: clientId,
+        project_number: projectNumber,
         ...projectPayload,
       });
       createdProjectId = project.id;
@@ -86,7 +89,8 @@ export class ProjectCreationService {
       return existingClient.id;
     }
 
-    const createdClient = await this.clientRepository.create(input.client.client);
+    const clientInput = createClientSchema.parse(input.client.client);
+    const createdClient = await this.clientRepository.create(clientInput);
     onClientCreated(createdClient.id);
     return createdClient.id;
   }

@@ -22,7 +22,7 @@ import type {
   IntakeScopeInput,
   IntakeStudioContext,
 } from "@/features/intake/types/intake-plan";
-import type { ProjectType } from "@/features/projects/types/project";
+import type { ProjectCategory } from "@/features/projects/types/project";
 import { buildWizardRoomsFromTemplate } from "@/features/rooms/data/room-templates";
 import { bg } from "@/src/i18n/bg";
 
@@ -30,8 +30,8 @@ interface IntakePlannerProps {
   studio: IntakeStudioContext;
 }
 
-function createInitialScope(projectType: ProjectType): IntakeScopeInput {
-  const defaultRooms = buildWizardRoomsFromTemplate(projectType);
+function createInitialScope(category: ProjectCategory): IntakeScopeInput {
+  const defaultRooms = buildWizardRoomsFromTemplate(category);
 
   return {
     mode: "template",
@@ -45,19 +45,19 @@ function createInitialScope(projectType: ProjectType): IntakeScopeInput {
 
 export function IntakePlanner({ studio }: IntakePlannerProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [projectType, setProjectType] = useState<ProjectType>("residential");
+  const [category, setCategory] = useState<ProjectCategory>("residential");
   const [scope, setScope] = useState<IntakeScopeInput>(() =>
     createInitialScope("residential")
   );
 
-  function handleProjectTypeChange(nextProjectType: ProjectType) {
-    setProjectType(nextProjectType);
-    setScope(createInitialScope(nextProjectType));
+  function handleCategoryChange(nextCategory: ProjectCategory) {
+    setCategory(nextCategory);
+    setScope(createInitialScope(nextCategory));
   }
 
   const simulation = useMemo(
-    () => calculateIntakePlan({ project_type: projectType, scope }, studio),
-    [projectType, scope, studio]
+    () => calculateIntakePlan({ category, scope }, studio),
+    [category, scope, studio]
   );
 
   function validateStep(step: number) {
@@ -101,15 +101,11 @@ export function IntakePlanner({ studio }: IntakePlannerProps) {
         <IntakeProgress currentStep={currentStep} />
 
         {currentStep === 1 ? (
-          <IntakeStepType value={projectType} onChange={handleProjectTypeChange} />
+          <IntakeStepType value={category} onChange={handleCategoryChange} />
         ) : null}
 
         {currentStep === 2 ? (
-          <IntakeStepScope
-            projectType={projectType}
-            value={scope}
-            onChange={setScope}
-          />
+          <IntakeStepScope category={category} value={scope} onChange={setScope} />
         ) : null}
 
         {currentStep === 3 ? <IntakeStepEstimate result={simulation} /> : null}

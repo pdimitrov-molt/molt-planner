@@ -10,8 +10,9 @@ import type {
 } from "@/features/intake/types/intake-plan";
 import { CapacityCalculator } from "@/features/planner/capacity-calculator";
 import {
-  getProjectTypeLabel,
-  type ProjectType,
+  getProjectClassificationLabel,
+  resolveProjectClassification,
+  type ProjectCategory,
 } from "@/features/projects/types/project";
 import { getRoomTemplateSet } from "@/features/rooms/data/room-templates";
 import { bg } from "@/src/i18n/bg";
@@ -22,7 +23,8 @@ export function calculateIntakePlan(
   studio: IntakeStudioContext,
   referenceDate: Date = new Date()
 ): IntakeSimulationResult {
-  const roomCount = resolveIntakeRoomCount(input.project_type, input.scope);
+  const classification = resolveProjectClassification(input);
+  const roomCount = resolveIntakeRoomCount(classification.category, input.scope);
   const calculator = new CapacityCalculator(studio.weekly_capacity_hours);
   const simulatedPhases = buildSimulatedPhasesForRoomCount(roomCount);
   const estimatedHours = calculator.calculateRemainingHours(simulatedPhases);
@@ -42,9 +44,9 @@ export function calculateIntakePlan(
   });
 
   return {
-    project_type: input.project_type,
-    project_type_label: getProjectTypeLabel(input.project_type),
-    scope_summary: buildScopeSummary(input.project_type, input.scope, roomCount),
+    ...classification,
+    classification_label: getProjectClassificationLabel(classification),
+    scope_summary: buildScopeSummary(classification.category, input.scope, roomCount),
     estimate: {
       room_count: roomCount,
       estimated_hours: estimatedHours,
@@ -64,7 +66,7 @@ export function calculateIntakePlan(
 }
 
 function buildScopeSummary(
-  projectType: ProjectType,
+  category: ProjectCategory,
   scope: IntakeSimulationInput["scope"],
   roomCount: number
 ) {
@@ -77,7 +79,7 @@ function buildScopeSummary(
     return bg.intake.scopeSummary.roomsAndArea(roomCount, areaLabel);
   }
 
-  const templateSet = getRoomTemplateSet(projectType);
+  const templateSet = getRoomTemplateSet(category);
   const templateName = templateSet?.name ?? bg.common.roomTemplateFallback;
 
   return `${templateName} · ${roomCount} ${roomCount === 1 ? "избрано помещение" : "избрани помещения"}`;

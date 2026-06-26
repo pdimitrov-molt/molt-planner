@@ -2,16 +2,31 @@ import { z } from "zod";
 
 import { createClientSchema } from "@/features/clients/validation/client.schema";
 import {
+  PROJECT_CATEGORIES,
+  PROJECT_OBJECT_TYPES,
+  PROJECT_PACKAGES,
   PROJECT_PRIORITIES,
-  PROJECT_TYPES,
 } from "@/features/projects/types/project";
 import { wizardRoomSchema } from "@/features/rooms/validation/room.schema";
 import { bg } from "@/src/i18n/bg";
 
+const optionalDate = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, bg.validation.dateInvalid)
+  .optional()
+  .nullable();
+
 export const wizardProjectSchema = z.object({
   name: z.string().trim().min(1, bg.validation.projectNameRequired).max(200),
-  project_type: z.enum(PROJECT_TYPES, {
-    message: bg.validation.projectTypeRequired,
+  category: z.enum(PROJECT_CATEGORIES, {
+    message: bg.validation.categoryRequired,
+  }),
+  object_type: z.enum(PROJECT_OBJECT_TYPES, {
+    message: bg.validation.objectTypeRequired,
+  }),
+  package: z.enum(PROJECT_PACKAGES, {
+    message: bg.validation.packageRequired,
   }),
   site_address: z.string().trim().max(500).optional(),
   site_area: z
@@ -20,6 +35,9 @@ export const wizardProjectSchema = z.object({
     .nullable()
     .optional(),
   priority: z.enum(PROJECT_PRIORITIES).default("normal"),
+  design_deadline: optionalDate,
+  execution_deadline: optionalDate,
+  move_in_date: optionalDate,
 });
 
 export const existingClientSelectionSchema = z.object({
@@ -52,10 +70,15 @@ export type ProjectWizardInput = z.infer<typeof projectWizardSchema>;
 export function normalizeWizardProjectInput(input: WizardProjectInput) {
   return {
     name: input.name.trim(),
-    project_type: input.project_type,
+    category: input.category,
+    object_type: input.object_type,
+    package: input.package,
     site_address: input.site_address?.trim() ? input.site_address.trim() : null,
     site_area: input.site_area ?? null,
     priority: input.priority,
+    design_deadline: input.design_deadline ?? null,
+    execution_deadline: input.execution_deadline ?? null,
+    move_in_date: input.move_in_date ?? null,
     engagement_status: "active" as const,
   };
 }

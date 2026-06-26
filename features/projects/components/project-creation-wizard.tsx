@@ -44,9 +44,13 @@ function createInitialClientSelection(clients: Client[]): WizardClientSelection 
     mode: "new",
     client: {
       display_name: "",
+      contact_phone: undefined,
       contact_email: undefined,
+      contact_viber: undefined,
+      contact_whatsapp: undefined,
+      secondary_contact: undefined,
       preferred_channel: "email",
-      decision_style: "collaborative",
+      client_insights: undefined,
     },
   };
 }
@@ -54,10 +58,15 @@ function createInitialClientSelection(clients: Client[]): WizardClientSelection 
 function createInitialProject(): WizardProjectInput {
   return {
     name: "",
-    project_type: "residential",
+    category: "residential",
+    object_type: "apartment",
+    package: "interior",
     site_address: "",
     site_area: null,
     priority: "normal",
+    design_deadline: null,
+    execution_deadline: null,
+    move_in_date: null,
   };
 }
 
@@ -76,8 +85,8 @@ export function ProjectCreationWizard({ clients }: ProjectCreationWizardProps) {
   );
 
   useEffect(() => {
-    setRooms(buildWizardRoomsFromTemplate(projectInput.project_type));
-  }, [projectInput.project_type]);
+    setRooms(buildWizardRoomsFromTemplate(projectInput.category));
+  }, [projectInput.category]);
 
   function validateStep(step: number) {
     if (step === 1) {
@@ -182,7 +191,7 @@ export function ProjectCreationWizard({ clients }: ProjectCreationWizardProps) {
 
         {currentStep === 3 ? (
           <WizardStepRooms
-            projectType={projectInput.project_type}
+            category={projectInput.category}
             rooms={rooms}
             onChange={setRooms}
           />

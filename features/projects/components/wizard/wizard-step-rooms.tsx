@@ -1,6 +1,12 @@
 "use client";
 
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CopyIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { ProjectCategory } from "@/features/projects/types/project";
+import { getProjectCategoryLabel } from "@/features/projects/types/project";
 import {
   buildWizardRoomsFromTemplate,
   getRoomTemplateSet,
@@ -22,12 +30,10 @@ import {
   ROOM_KINDS,
   ROOM_KIND_LABELS,
 } from "@/features/rooms/types/room";
-import type { ProjectType } from "@/features/projects/types/project";
-import { getProjectTypeLabel } from "@/features/projects/types/project";
 import { bg } from "@/src/i18n/bg";
 
 interface WizardStepRoomsProps {
-  projectType: ProjectType;
+  category: ProjectCategory;
   rooms: WizardRoomDraft[];
   onChange: (rooms: WizardRoomDraft[]) => void;
 }
@@ -43,12 +49,16 @@ function createCustomRoom(sortOrder: number): WizardRoomDraft {
   };
 }
 
+function reindexRooms(rooms: WizardRoomDraft[]): WizardRoomDraft[] {
+  return rooms.map((room, index) => ({ ...room, sort_order: index }));
+}
+
 export function WizardStepRooms({
-  projectType,
+  category,
   rooms,
   onChange,
 }: WizardStepRoomsProps) {
-  const templateSet = getRoomTemplateSet(projectType);
+  const templateSet = getRoomTemplateSet(category);
 
   function toggleRoom(roomKey: string, checked: boolean) {
     if (checked) {
@@ -58,24 +68,24 @@ export function WizardStepRooms({
         return;
       }
 
-      onChange([
-        ...rooms,
-        {
-          key: `${templateRoom.key}-${rooms.length}`,
-          name: templateRoom.default_name,
-          room_kind: templateRoom.room_kind,
-          scope_summary: templateRoom.scope_summary,
-          room_template_key: templateRoom.key,
-          sort_order: rooms.length,
-        },
-      ]);
+      onChange(
+        reindexRooms([
+          ...rooms,
+          {
+            key: `${templateRoom.key}-${rooms.length}`,
+            name: templateRoom.default_name,
+            room_kind: templateRoom.room_kind,
+            scope_summary: templateRoom.scope_summary,
+            room_template_key: templateRoom.key,
+            sort_order: rooms.length,
+          },
+        ])
+      );
       return;
     }
 
     onChange(
-      rooms
-        .filter((room) => room.room_template_key !== roomKey)
-        .map((room, index) => ({ ...room, sort_order: index }))
+      reindexRooms(rooms.filter((room) => room.room_template_key !== roomKey))
     );
   }
 
@@ -86,39 +96,69 @@ export function WizardStepRooms({
   }
 
   function removeRoom(roomKey: string) {
-    onChange(
-      rooms
-        .filter((room) => room.key !== roomKey)
-        .map((room, index) => ({ ...room, sort_order: index }))
-    );
+    onChange(reindexRooms(rooms.filter((room) => room.key !== roomKey)));
+  }
+
+  function duplicateRoom(roomKey: string) {
+    const index = rooms.findIndex((room) => room.key === roomKey);
+
+    if (index === -1) {
+      return;
+    }
+
+    const source = rooms[index];
+    const duplicate: WizardRoomDraft = {
+      ...source,
+      key: `${source.key}-copy-${crypto.randomUUID()}`,
+      name: source.name ? `${source.name} (${bg.projects.wizard.duplicateRoom})` : "",
+      room_template_key: null,
+      sort_order: index + 1,
+    };
+
+    const next = [...rooms];
+    next.splice(index + 1, 0, duplicate);
+    onChange(reindexRooms(next));
+  }
+
+  function moveRoom(roomKey: string, direction: "up" | "down") {
+    const index = rooms.findIndex((room) => room.key === roomKey);
+
+    if (index === -1) {
+      return;
+    }
+
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= rooms.length) {
+      return;
+    }
+
+    const next = [...rooms];
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    onChange(reindexRooms(next));
+  }
+
+  function addRoom() {
+    onChange(reindexRooms([...rooms, createCustomRoom(rooms.length)]));
   }
 
   function resetFromTemplate() {
-    onChange(buildWizardRoomsFromTemplate(projectType));
+    onChange(buildWizardRoomsFromTemplate(category));
   }
 
   return (
     <div className="grid gap-8">
-      <div className="surface-panel p-6">
+      <div className="surface-panel rounded-2xl p-6 shadow-sm">
         <p className="text-section-title">
           {templateSet?.name ?? bg.common.roomTemplateFallback}
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body">
           {templateSet?.description ??
-            bg.projects.wizard.defaultRoomsFor(getProjectTypeLabel(projectType))}
+            bg.projects.wizard.defaultRoomsFor(getProjectCategoryLabel(category))}
         </p>
-        <div className="mt-5 flex flex-wrap gap-3">
+        <div className="mt-5">
           <Button type="button" variant="outline" size="sm" onClick={resetFromTemplate}>
             {bg.projects.wizard.loadTemplateDefaults}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onChange([...rooms, createCustomRoom(rooms.length)])}
-          >
-            <PlusIcon data-icon="inline-start" />
-            {bg.projects.wizard.addCustomRoom}
           </Button>
         </div>
       </div>
@@ -134,7 +174,7 @@ export function WizardStepRooms({
             return (
               <label
                 key={templateRoom.key}
-                className="surface-panel flex items-start gap-3"
+                className="surface-panel flex items-start gap-3 rounded-2xl shadow-sm"
               >
                 <Checkbox
                   checked={isSelected}
@@ -157,27 +197,61 @@ export function WizardStepRooms({
       <div className="grid gap-5">
         <Label>{bg.projects.wizard.selectedRooms(rooms.length)}</Label>
         {rooms.length === 0 ? (
-          <p className="surface-panel border-dashed p-8 text-body">
+          <p className="surface-panel rounded-2xl border-dashed p-8 text-body shadow-sm">
             {bg.projects.wizard.selectRoomToContinue}
           </p>
         ) : (
-          rooms.map((room) => (
-            <div key={room.key} className="surface-card grid gap-5 p-5">
-              <div className="flex items-center justify-between gap-3">
+          rooms.map((room, index) => (
+            <div
+              key={room.key}
+              className="surface-card grid gap-5 rounded-2xl p-5 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="font-medium">
                   {room.room_template_key
                     ? bg.projects.wizard.templateRoom
                     : bg.projects.wizard.customRoom}
                 </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => removeRoom(room.key)}
-                >
-                  <Trash2Icon />
-                  <span className="sr-only">{bg.projects.wizard.removeRoom}</span>
-                </Button>
+                <div className="flex flex-wrap items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => duplicateRoom(room.key)}
+                  >
+                    <CopyIcon data-icon="inline-start" />
+                    {bg.projects.wizard.duplicateRoom}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={index === 0}
+                    onClick={() => moveRoom(room.key, "up")}
+                  >
+                    <ArrowUpIcon data-icon="inline-start" />
+                    {bg.projects.wizard.moveRoomUp}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={index === rooms.length - 1}
+                    onClick={() => moveRoom(room.key, "down")}
+                  >
+                    <ArrowDownIcon data-icon="inline-start" />
+                    {bg.projects.wizard.moveRoomDown}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeRoom(room.key)}
+                  >
+                    <Trash2Icon data-icon="inline-start" />
+                    {bg.projects.wizard.deleteRoom}
+                  </Button>
+                </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
@@ -215,6 +289,17 @@ export function WizardStepRooms({
             </div>
           ))
         )}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="h-14 w-full rounded-2xl text-base"
+          onClick={addRoom}
+        >
+          <PlusIcon data-icon="inline-start" />
+          {bg.projects.wizard.addRoom}
+        </Button>
       </div>
     </div>
   );

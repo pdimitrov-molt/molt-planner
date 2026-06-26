@@ -42,3 +42,25 @@ export async function createClientAction(
     };
   }
 }
+
+export async function updateClientAction(
+  input: Parameters<ClientService["updateClient"]>[0]
+): Promise<ClientActionResult<Client>> {
+  try {
+    const service = await getClientService();
+    const client = await service.updateClient(input);
+    return { success: true, data: client };
+  } catch (error) {
+    if (ClientService.isValidationError(error)) {
+      return {
+        success: false,
+        error: ClientService.getValidationMessage(error),
+      };
+    }
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update client.",
+    };
+  }
+}

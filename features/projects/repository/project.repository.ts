@@ -1,26 +1,34 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { formatProjectNumber } from "@/features/projects/lib/project-number";
 import type {
   Project,
+  ProjectCategory,
   ProjectDetail,
+  ProjectObjectType,
+  ProjectPackage,
   ProjectRow,
-  ProjectType,
   ProjectWithClient,
 } from "@/features/projects/types/project";
 import {
   mapProjectRow,
   mapProjectWithClientRow,
 } from "@/features/projects/types/project";
-import type { CreateProjectInput } from "@/features/projects/validation/project.schema";
 
 export interface CreateProjectRecord {
   client_id: string;
+  project_number: string;
   name: string;
-  project_type: ProjectType;
+  category: ProjectCategory;
+  object_type: ProjectObjectType;
+  package: ProjectPackage;
   site_address: string | null;
   site_area: number | null;
   engagement_status: string;
   priority: string;
+  design_deadline: string | null;
+  execution_deadline: string | null;
+  move_in_date: string | null;
 }
 
 export class ProjectRepository {
@@ -31,6 +39,23 @@ export class ProjectRepository {
       .from("projects")
       .select("*, clients(display_name)")
       .is("deleted_at", null);
+  }
+
+  async getNextProjectNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const yearPrefix = String(year).slice(-2);
+
+    const { count, error } = await this.database
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .like("project_number", `${yearPrefix}%`)
+      .is("deleted_at", null);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return formatProjectNumber(year, (count ?? 0) + 1);
   }
 
   async findAllWithClient(): Promise<ProjectWithClient[]> {
@@ -99,7 +124,7 @@ export class ProjectRepository {
     let phaseRows: PhaseRowWithRoom[] = [];
 
     if (roomIds.length > 0) {
-      const { data, error: phasesError } = await this.database
+      const { data: phaseData, error: phasesError } = await this.database
         .from("phases")
         .select("id, room_id, phase_kind, status, sort_order")
         .in("room_id", roomIds)
@@ -110,7 +135,7 @@ export class ProjectRepository {
         throw new Error(phasesError.message);
       }
 
-      phaseRows = (data ?? []) as PhaseRowWithRoom[];
+      phaseRows = (phaseData ?? []) as PhaseRowWithRoom[];
     }
 
     return {
@@ -139,12 +164,18 @@ export class ProjectRepository {
     const timestamp = new Date().toISOString();
     const payload = {
       client_id: input.client_id,
+      project_number: input.project_number,
       name: input.name,
-      project_type: input.project_type,
+      category: input.category,
+      object_type: input.object_type,
+      package: input.package,
       site_address: input.site_address,
       site_area: input.site_area,
       engagement_status: input.engagement_status,
       priority: input.priority,
+      design_deadline: input.design_deadline,
+      execution_deadline: input.execution_deadline,
+      move_in_date: input.move_in_date,
       created_at: timestamp,
       updated_at: timestamp,
       deleted_at: null,

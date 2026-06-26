@@ -21,7 +21,7 @@ import { NewProjectLink } from "@/features/projects/components/new-project-link"
 import { ProjectStatusBadge } from "@/features/projects/components/project-status-badge";
 import { ProjectTableRowActions } from "@/features/projects/components/project-table-row-actions";
 import type { ProjectWithClient } from "@/features/projects/types/project";
-import { getProjectTypeLabel } from "@/features/projects/types/project";
+import { getProjectClassificationLabel } from "@/features/projects/types/project";
 import { bg } from "@/src/i18n/bg";
 import { formatArea, formatShortDate } from "@/src/i18n/format";
 
@@ -59,9 +59,10 @@ export function ProjectTable({ projects }: ProjectTableProps) {
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>{bg.projects.table.projectNumber}</TableHead>
           <TableHead>{bg.projects.table.project}</TableHead>
           <TableHead>{bg.projects.table.client}</TableHead>
-          <TableHead>{bg.projects.table.type}</TableHead>
+          <TableHead>{bg.projects.table.classification}</TableHead>
           <TableHead>{bg.projects.table.area}</TableHead>
           <TableHead>{bg.projects.table.status}</TableHead>
           <TableHead>{bg.projects.table.created}</TableHead>
@@ -71,6 +72,9 @@ export function ProjectTable({ projects }: ProjectTableProps) {
       <TableBody>
         {projects.map((project) => (
           <TableRow key={project.id}>
+            <TableCell className="font-mono text-sm text-muted-foreground">
+              {project.project_number}
+            </TableCell>
             <TableCell>
               <Link
                 href={`/projects/${project.id}`}
@@ -85,7 +89,7 @@ export function ProjectTable({ projects }: ProjectTableProps) {
               ) : null}
             </TableCell>
             <TableCell>{project.client_display_name}</TableCell>
-            <TableCell>{getProjectTypeLabel(project.project_type)}</TableCell>
+            <TableCell>{getProjectClassificationLabel(project)}</TableCell>
             <TableCell>{formatAreaCell(project.site_area)}</TableCell>
             <TableCell>
               <ProjectStatusBadge status={project.engagement_status} />

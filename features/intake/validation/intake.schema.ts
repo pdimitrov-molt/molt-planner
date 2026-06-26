@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { PROJECT_TYPES } from "@/features/projects/types/project";
+import {
+  PROJECT_CATEGORIES,
+  PROJECT_OBJECT_TYPES,
+  PROJECT_PACKAGES,
+} from "@/features/projects/types/project";
 
 export const intakeScopeSchema = z.discriminatedUnion("mode", [
   z.object({
@@ -18,7 +22,9 @@ export const intakeScopeSchema = z.discriminatedUnion("mode", [
 ]);
 
 export const intakeSimulationSchema = z.object({
-  project_type: z.enum(PROJECT_TYPES),
+  category: z.enum(PROJECT_CATEGORIES),
+  object_type: z.enum(PROJECT_OBJECT_TYPES).optional(),
+  package: z.enum(PROJECT_PACKAGES).optional(),
   scope: intakeScopeSchema,
 });
 

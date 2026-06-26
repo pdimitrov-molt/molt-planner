@@ -2,17 +2,17 @@
 
 import { Label } from "@/components/ui/label";
 import {
-  PROJECT_TYPES,
-  getProjectTypeLabel,
-  type ProjectType,
+  PROJECT_CATEGORIES,
+  getProjectCategoryLabel,
+  type ProjectCategory,
 } from "@/features/projects/types/project";
 import { getRoomTemplateSet } from "@/features/rooms/data/room-templates";
 import { cn } from "@/lib/utils";
 import { bg } from "@/src/i18n/bg";
 
 interface IntakeStepTypeProps {
-  value: ProjectType;
-  onChange: (projectType: ProjectType) => void;
+  value: ProjectCategory;
+  onChange: (category: ProjectCategory) => void;
 }
 
 export function IntakeStepType({ value, onChange }: IntakeStepTypeProps) {
@@ -20,24 +20,24 @@ export function IntakeStepType({ value, onChange }: IntakeStepTypeProps) {
     <div className="grid gap-6">
       <Label>{bg.intake.type.prompt}</Label>
       <div className="grid gap-4 sm:grid-cols-2">
-        {PROJECT_TYPES.map((projectType) => {
-          const templateSet = getRoomTemplateSet(projectType);
-          const isSelected = value === projectType;
+        {PROJECT_CATEGORIES.map((category) => {
+          const templateSet = getRoomTemplateSet(category);
+          const isSelected = value === category;
 
           return (
             <button
-              key={projectType}
+              key={category}
               type="button"
               className={cn(
                 "surface-selectable text-left",
                 isSelected && "surface-selectable-selected"
               )}
-              onClick={() => onChange(projectType)}
+              onClick={() => onChange(category)}
             >
-              <p className="text-section-title">{getProjectTypeLabel(projectType)}</p>
+              <p className="text-section-title">{getProjectCategoryLabel(category)}</p>
               <p className="mt-2 text-body">
                 {templateSet?.description ??
-                  bg.intake.type.fallbackDescription(getProjectTypeLabel(projectType))}
+                  bg.intake.type.fallbackDescription(getProjectCategoryLabel(category))}
               </p>
             </button>
           );

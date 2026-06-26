@@ -1,4 +1,4 @@
-import type { ProjectType } from "@/features/projects/types/project";
+import type { ProjectCategory } from "@/features/projects/types/project";
 import type { RoomKind } from "@/features/rooms/types/room";
 
 export interface RoomTemplateDefinition {
@@ -9,7 +9,7 @@ export interface RoomTemplateDefinition {
 }
 
 export interface RoomTemplateSet {
-  project_type: ProjectType;
+  category: ProjectCategory;
   name: string;
   description: string;
   rooms: RoomTemplateDefinition[];

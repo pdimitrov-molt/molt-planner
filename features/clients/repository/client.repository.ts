@@ -2,8 +2,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Client, ClientRow } from "@/features/clients/types/client";
 import { mapClientRow } from "@/features/clients/types/client";
-import type { CreateClientInput } from "@/features/clients/validation/client.schema";
-import { normalizeCreateClientInput } from "@/features/clients/validation/client.schema";
+import type {
+  ClientUpdatePayload,
+  ClientWritePayload,
+  CreateClientInput,
+  UpdateClientInput,
+} from "@/features/clients/validation/client.schema";
+import {
+  normalizeCreateClientInput,
+  normalizeUpdateClientInput,
+} from "@/features/clients/validation/client.schema";
 
 export class ClientRepository {
   constructor(private readonly database: SupabaseClient) {}
@@ -43,7 +51,11 @@ export class ClientRepository {
 
   async create(input: CreateClientInput): Promise<Client> {
     const timestamp = new Date().toISOString();
-    const payload = {
+    const payload: ClientWritePayload & {
+      created_at: string;
+      updated_at: string;
+      deleted_at: null;
+    } = {
       ...normalizeCreateClientInput(input),
       created_at: timestamp,
       updated_at: timestamp,
@@ -53,6 +65,28 @@ export class ClientRepository {
     const { data, error } = await this.database
       .from("clients")
       .insert(payload)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return mapClientRow(data as ClientRow);
+  }
+
+  async update(input: UpdateClientInput): Promise<Client> {
+    const timestamp = new Date().toISOString();
+    const payload: ClientUpdatePayload & { updated_at: string } = {
+      ...normalizeUpdateClientInput(input),
+      updated_at: timestamp,
+    };
+
+    const { data, error } = await this.database
+      .from("clients")
+      .update(payload)
+      .eq("id", input.id)
+      .is("deleted_at", null)
       .select("*")
       .single();
 

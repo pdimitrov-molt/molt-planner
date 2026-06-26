@@ -11,8 +11,11 @@ interface WorkspaceHeaderProps {
 }
 
 export function WorkspaceHeader({ workspace }: WorkspaceHeaderProps) {
+  const isCompleted =
+    workspace.is_completed || workspace.engagement_status === "completed";
+
   return (
-    <header className="flex flex-col gap-6">
+    <header className="flex flex-col gap-8">
       <Link
         href="/projects"
         className="text-body transition-colors hover:text-foreground"
@@ -22,8 +25,14 @@ export function WorkspaceHeader({ workspace }: WorkspaceHeaderProps) {
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-display">{workspace.name}</h1>
-          <ProjectStatusBadge status={workspace.engagement_status} />
+          <p className="text-eyebrow">{workspace.project_number}</p>
+          {isCompleted ? (
+            <Badge className="rounded-full bg-emerald-600 px-4 py-1.5 text-sm text-white hover:bg-emerald-600">
+              {bg.progress.projectCompleted}
+            </Badge>
+          ) : (
+            <ProjectStatusBadge status={workspace.engagement_status} />
+          )}
           <Badge variant="outline">
             {bg.projects.workspace.priorityLabel(
               PROJECT_PRIORITY_LABELS[workspace.priority]
@@ -31,10 +40,25 @@ export function WorkspaceHeader({ workspace }: WorkspaceHeaderProps) {
           </Badge>
         </div>
 
-        <p className="text-body">
-          {workspace.client_display_name} · {workspace.project_type_label} ·{" "}
-          {workspace.site_area_label} · {workspace.target_handover_label}
+        <h1 className="text-display">{workspace.name}</h1>
+
+        <p className="max-w-3xl text-body">
+          {workspace.client_display_name} · {workspace.classification_label} ·{" "}
+          {workspace.site_area_label}
         </p>
+
+        <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
+          <span>
+            {bg.projects.wizard.designDeadline}: {workspace.design_deadline_label}
+          </span>
+          <span>
+            {bg.projects.wizard.executionDeadline}:{" "}
+            {workspace.execution_deadline_label}
+          </span>
+          <span>
+            {bg.projects.wizard.moveInDate}: {workspace.move_in_date_label}
+          </span>
+        </div>
       </div>
     </header>
   );

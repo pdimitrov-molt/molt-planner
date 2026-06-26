@@ -1,4 +1,8 @@
 import {
+  calculateProjectProgress,
+  calculateRoomProgress,
+} from "@/features/progress/lib/calculate-progress";
+import {
   PHASE_KIND_LABELS,
   type PhaseKind,
 } from "@/features/phases/types/phase";
@@ -9,7 +13,7 @@ import {
 } from "@/features/planner/capacity";
 import { CapacityCalculator } from "@/features/planner/capacity-calculator";
 import {
-  getProjectTypeLabel,
+  getProjectClassificationLabel,
   PROJECT_PRIORITY_LABELS,
 } from "@/features/projects/types/project";
 import type {
@@ -48,12 +52,24 @@ function formatArea(area: number | null) {
   return formatAreaDisplay(area);
 }
 
-function formatHandoverDate(value: string | null) {
+function formatOptionalDate(value: string | null, emptyLabel: string) {
   if (!value) {
-    return bg.common.handoverNotScheduled;
+    return emptyLabel;
   }
 
   return formatLongDate(value);
+}
+
+function getNextPhase(room: WorkspaceSourceRoom) {
+  const currentIndex = room.phases.findIndex(
+    (phase) => phase.id === room.current_phase_id
+  );
+
+  if (currentIndex === -1) {
+    return room.phases[1] ?? null;
+  }
+
+  return room.phases[currentIndex + 1] ?? null;
 }
 
 function calculateRoomRemainingHours(room: WorkspaceSourceRoom) {
@@ -75,37 +91,14 @@ function mapRoomPhases(room: WorkspaceSourceRoom) {
     label: PHASE_KIND_LABELS[phase.phase_kind],
     status: phase.status,
     is_current: phase.id === room.current_phase_id,
+    estimated_hours:
+      phase.estimated_hours ?? getPhaseTemplateEstimatedHours(phase.phase_kind),
+    target_end_date: phase.target_end_date,
   }));
 }
 
 function getCurrentPhase(room: WorkspaceSourceRoom) {
   return room.phases.find((phase) => phase.id === room.current_phase_id) ?? room.phases[0];
-}
-
-function calculateRoomProgress(room: WorkspaceSourceRoom) {
-  if (room.phases.length === 0) {
-    return 0;
-  }
-
-  const completedCount = room.phases.filter(
-    (phase) => phase.status === "completed"
-  ).length;
-
-  return Math.round((completedCount / room.phases.length) * 100);
-}
-
-function calculateOverallProgress(rooms: WorkspaceSourceRoom[]) {
-  const allPhases = rooms.flatMap((room) => room.phases);
-
-  if (allPhases.length === 0) {
-    return 0;
-  }
-
-  const completedCount = allPhases.filter(
-    (phase) => phase.status === "completed"
-  ).length;
-
-  return Math.round((completedCount / allPhases.length) * 100);
 }
 
 function resolveFocusRoom(rooms: WorkspaceSourceRoom[]) {
@@ -129,7 +122,9 @@ function resolveFocusRoom(rooms: WorkspaceSourceRoom[]) {
       score += 10;
     }
 
-    return { room, score, progress: calculateRoomProgress(room) };
+    const progress = calculateRoomProgress(room.phases);
+
+    return { room, score, progress: progress.progress_percent };
   });
 
   scoredRooms.sort((left, right) => {
@@ -323,6 +318,7 @@ export function buildProjectWorkspace(
   );
   const capacityImpact = buildCapacityImpact(todayHours);
   const projectPhases = source.rooms.flatMap((room) => room.phases);
+  const projectProgress = calculateProjectProgress(source.rooms);
   const projectCapacity = new CapacityCalculator(WEEKLY_CAPACITY_HOURS).calculate({
     phases: projectPhases.map((phase) => ({
       phase_kind: phase.phase_kind,
@@ -333,14 +329,31 @@ export function buildProjectWorkspace(
 
   return {
     id: source.id,
+    project_number: source.project_number,
     name: source.name,
     client_display_name: source.client_display_name,
-    project_type_label: getProjectTypeLabel(source.project_type),
+    classification_label: getProjectClassificationLabel(source),
     site_area_label: formatArea(source.site_area),
     engagement_status: source.engagement_status,
     priority: source.priority,
-    target_handover_label: formatHandoverDate(source.target_handover_date),
-    overall_completion_percent: calculateOverallProgress(source.rooms),
+    design_deadline_label: formatOptionalDate(
+      source.design_deadline,
+      bg.common.dateNotSet
+    ),
+    execution_deadline_label: formatOptionalDate(
+      source.execution_deadline,
+      bg.common.dateNotSet
+    ),
+    move_in_date_label: formatOptionalDate(
+      source.move_in_date,
+      bg.common.handoverNotScheduled
+    ),
+    overall_completion_percent: projectProgress.progress_percent,
+    completed_rooms: projectProgress.completed_rooms,
+    total_rooms: projectProgress.total_rooms,
+    completed_phases: projectProgress.completed_phases,
+    total_phases: projectProgress.total_phases,
+    is_completed: projectProgress.is_completed,
     critical_phase_label: criticalPhase.label,
     critical_phase_context: criticalPhase.context,
     capacity_hours_today: todayHours,
@@ -355,6 +368,8 @@ export function buildProjectWorkspace(
     focus_room_name: focusRoom?.name ?? null,
     rooms: source.rooms.map((room) => {
       const currentPhase = getCurrentPhase(room);
+      const nextPhase = getNextPhase(room);
+      const roomProgress = calculateRoomProgress(room.phases);
 
       return {
         id: room.id,
@@ -365,11 +380,23 @@ export function buildProjectWorkspace(
           ? PHASE_KIND_LABELS[currentPhase.phase_kind]
           : bg.common.notStarted,
         current_phase_status: currentPhase?.status ?? "not_started",
+        next_phase_label: nextPhase
+          ? PHASE_KIND_LABELS[nextPhase.phase_kind]
+          : null,
+        progress_percent: roomProgress.progress_percent,
+        completed_phases: roomProgress.completed_phases,
+        total_phases: roomProgress.total_phases,
+        is_completed: roomProgress.is_completed,
+        status_label: roomProgress.is_completed
+          ? bg.progress.roomCompleted
+          : currentPhase
+            ? bg.labels.phaseStatus[currentPhase.status]
+            : bg.labels.phaseStatus.not_started,
         is_focus: focusRoom?.id === room.id,
         priority:
           ROOM_PRIORITY_LABELS[room.priority as RoomPriority] ?? room.priority,
-        phases: mapRoomPhases(room),
         remaining_hours: calculateRoomRemainingHours(room),
+        phases: mapRoomPhases(room),
       };
     }),
     today_tasks: todayTasks,

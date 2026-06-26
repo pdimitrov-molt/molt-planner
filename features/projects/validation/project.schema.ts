@@ -2,14 +2,22 @@ import { z } from "zod";
 
 import {
   ENGAGEMENT_STATUSES,
+  PROJECT_CATEGORIES,
+  PROJECT_OBJECT_TYPES,
+  PROJECT_PACKAGES,
   PROJECT_PRIORITIES,
-  PROJECT_TYPES,
 } from "@/features/projects/types/project";
 
 const sharedProjectFields = {
   name: z.string().trim().min(1, "Project name is required").max(200),
-  project_type: z.enum(PROJECT_TYPES, {
-    message: "Select a project type",
+  category: z.enum(PROJECT_CATEGORIES, {
+    message: "Select a project category",
+  }),
+  object_type: z.enum(PROJECT_OBJECT_TYPES, {
+    message: "Select an object type",
+  }),
+  package: z.enum(PROJECT_PACKAGES, {
+    message: "Select a package",
   }),
   site_address: z.string().trim().max(500).optional(),
   site_area: z

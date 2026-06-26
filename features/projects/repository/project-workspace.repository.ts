@@ -54,13 +54,18 @@ export class ProjectWorkspaceRepository {
 
     const source: WorkspaceSourceProject = {
       id: project.id,
+      project_number: project.project_number,
       name: project.name,
       client_display_name: project.client_display_name,
-      project_type: project.project_type,
+      category: project.category,
+      object_type: project.object_type,
+      package: project.package,
       site_area: project.site_area,
       engagement_status: project.engagement_status,
       priority: project.priority,
-      target_handover_date: project.target_handover_date,
+      design_deadline: project.design_deadline,
+      execution_deadline: project.execution_deadline,
+      move_in_date: project.move_in_date,
       rooms,
       tasks: tasks.map((task) => ({
         id: task.id,

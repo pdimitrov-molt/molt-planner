@@ -1,10 +1,7 @@
 "use client";
 
 import type { Client } from "@/features/clients/types/client";
-import {
-  DECISION_STYLE_LABELS,
-  PREFERRED_CHANNEL_LABELS,
-} from "@/features/clients/types/client";
+import { PREFERRED_CHANNEL_LABELS } from "@/features/clients/types/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,6 +21,17 @@ interface WizardStepClientProps {
   value: WizardClientSelection;
   onChange: (value: WizardClientSelection) => void;
 }
+
+const EMPTY_NEW_CLIENT = {
+  display_name: "",
+  contact_phone: undefined,
+  contact_email: undefined,
+  contact_viber: undefined,
+  contact_whatsapp: undefined,
+  secondary_contact: undefined,
+  preferred_channel: "email" as const,
+  client_insights: undefined,
+};
 
 export function WizardStepClient({
   clients,
@@ -47,9 +55,7 @@ export function WizardStepClient({
           }
         >
           <p className="text-section-title">{bg.projects.wizard.existingClient}</p>
-          <p className="text-body">
-            {bg.projects.wizard.existingClientHint}
-          </p>
+          <p className="text-body">{bg.projects.wizard.existingClientHint}</p>
         </button>
         <button
           type="button"
@@ -57,22 +63,10 @@ export function WizardStepClient({
             "surface-selectable text-left",
             value.mode === "new" && "surface-selectable-selected"
           )}
-          onClick={() =>
-            onChange({
-              mode: "new",
-              client: {
-                display_name: "",
-                contact_email: undefined,
-                preferred_channel: "email",
-                decision_style: "collaborative",
-              },
-            })
-          }
+          onClick={() => onChange({ mode: "new", client: EMPTY_NEW_CLIENT })}
         >
           <p className="text-section-title">{bg.projects.wizard.newClient}</p>
-          <p className="text-body">
-            {bg.projects.wizard.newClientHint}
-          </p>
+          <p className="text-body">{bg.projects.wizard.newClientHint}</p>
         </button>
       </div>
 
@@ -98,7 +92,7 @@ export function WizardStepClient({
           </Select>
         </div>
       ) : (
-        <div className="grid gap-6">
+        <div className="grid gap-8">
           <div className="grid gap-2">
             <Label htmlFor="client-name">{bg.projects.wizard.clientName}</Label>
             <Input
@@ -113,74 +107,127 @@ export function WizardStepClient({
               placeholder={bg.projects.wizard.clientNamePlaceholder}
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="preferred-channel">
-                {bg.projects.wizard.preferredChannel}
-              </Label>
-              <Select
-                value={value.client.preferred_channel}
-                onValueChange={(preferredChannel) =>
-                  onChange({
-                    mode: "new",
-                    client: {
-                      ...value.client,
-                      preferred_channel: preferredChannel as typeof value.client.preferred_channel,
-                    },
-                  })
-                }
-              >
-                <SelectTrigger id="preferred-channel">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(PREFERRED_CHANNEL_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+          <div className="grid gap-4">
+            <p className="text-section-title">{bg.projects.wizard.clientContacts}</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="contact-phone">{bg.projects.wizard.contactPhone}</Label>
+                <Input
+                  id="contact-phone"
+                  value={value.client.contact_phone ?? ""}
+                  onChange={(event) =>
+                    onChange({
+                      mode: "new",
+                      client: { ...value.client, contact_phone: event.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="contact-email">{bg.projects.wizard.contactEmail}</Label>
+                <Input
+                  id="contact-email"
+                  type="email"
+                  value={value.client.contact_email ?? ""}
+                  onChange={(event) =>
+                    onChange({
+                      mode: "new",
+                      client: { ...value.client, contact_email: event.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="contact-viber">{bg.projects.wizard.contactViber}</Label>
+                <Input
+                  id="contact-viber"
+                  value={value.client.contact_viber ?? ""}
+                  onChange={(event) =>
+                    onChange({
+                      mode: "new",
+                      client: { ...value.client, contact_viber: event.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="contact-whatsapp">
+                  {bg.projects.wizard.contactWhatsapp}
+                </Label>
+                <Input
+                  id="contact-whatsapp"
+                  value={value.client.contact_whatsapp ?? ""}
+                  onChange={(event) =>
+                    onChange({
+                      mode: "new",
+                      client: { ...value.client, contact_whatsapp: event.target.value },
+                    })
+                  }
+                />
+              </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="decision-style">{bg.projects.wizard.decisionStyle}</Label>
-              <Select
-                value={value.client.decision_style}
-                onValueChange={(decisionStyle) =>
+              <Label htmlFor="secondary-contact">
+                {bg.projects.wizard.secondaryContact}
+              </Label>
+              <Input
+                id="secondary-contact"
+                value={value.client.secondary_contact ?? ""}
+                onChange={(event) =>
                   onChange({
                     mode: "new",
-                    client: {
-                      ...value.client,
-                      decision_style: decisionStyle as typeof value.client.decision_style,
-                    },
+                    client: { ...value.client, secondary_contact: event.target.value },
                   })
                 }
-              >
-                <SelectTrigger id="decision-style">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(DECISION_STYLE_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
+
           <div className="grid gap-2">
-            <Label htmlFor="client-notes">{bg.projects.wizard.clientNotes}</Label>
+            <Label htmlFor="preferred-channel">
+              {bg.projects.wizard.preferredChannel}
+            </Label>
+            <Select
+              value={value.client.preferred_channel}
+              onValueChange={(preferredChannel) =>
+                onChange({
+                  mode: "new",
+                  client: {
+                    ...value.client,
+                    preferred_channel:
+                      preferredChannel as typeof value.client.preferred_channel,
+                  },
+                })
+              }
+            >
+              <SelectTrigger id="preferred-channel">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PREFERRED_CHANNEL_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="client-insights">{bg.projects.wizard.clientInsights}</Label>
+            <p className="text-body">{bg.projects.wizard.clientInsightsDescription}</p>
             <Textarea
-              id="client-notes"
-              value={value.client.notes ?? ""}
+              id="client-insights"
+              className="min-h-40"
+              value={value.client.client_insights ?? ""}
               onChange={(event) =>
                 onChange({
                   mode: "new",
-                  client: { ...value.client, notes: event.target.value },
+                  client: { ...value.client, client_insights: event.target.value },
                 })
               }
-              placeholder={bg.projects.wizard.clientNotesPlaceholder}
+              placeholder={bg.projects.wizard.clientInsightsPlaceholder}
             />
           </div>
         </div>

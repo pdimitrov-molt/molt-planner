@@ -55,6 +55,11 @@ export async function createProjectWizardAction(
       data: project,
     };
   } catch (error) {
+    console.error("====================================");
+    console.error("PROJECT CREATION ERROR");
+    console.error(error);
+    console.error("====================================");
+  
     return handleWizardError(error);
   }
 }

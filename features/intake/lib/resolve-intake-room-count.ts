@@ -1,16 +1,16 @@
 import type { IntakeScopeInput } from "@/features/intake/types/intake-plan";
+import type { ProjectCategory } from "@/features/projects/types/project";
 import { getRoomTemplateSet } from "@/features/rooms/data/room-templates";
-import type { ProjectType } from "@/features/projects/types/project";
 
 export function resolveIntakeRoomCount(
-  projectType: ProjectType,
+  category: ProjectCategory,
   scope: IntakeScopeInput
 ): number {
   if (scope.mode === "manual") {
     return Math.max(1, Math.round(scope.approximate_room_count));
   }
 
-  const templateSet = getRoomTemplateSet(projectType);
+  const templateSet = getRoomTemplateSet(category);
 
   if (!templateSet) {
     return Math.max(1, Math.round(scope.approximate_room_count));

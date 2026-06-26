@@ -1,12 +1,43 @@
 import { bg } from "@/src/i18n/bg";
 
 export const ROOM_KINDS = [
-  "living",
-  "bedroom",
+  "entrance",
+  "hallway",
+  "open_living_area",
   "kitchen",
+  "dining_room",
+  "master_bedroom",
+  "bedroom",
+  "kids_room",
+  "guest_room",
+  "walk_in_closet",
   "bathroom",
+  "wc",
+  "laundry",
+  "storage",
+  "pantry",
   "office",
-  "retail",
+  "terrace",
+  "garage",
+  "basement",
+  "staircase",
+  "reception",
+  "lobby",
+  "meeting_room",
+  "open_office",
+  "kitchenette",
+  "server_room",
+  "restroom",
+  "restaurant",
+  "bar",
+  "hotel_room",
+  "suite",
+  "spa",
+  "fitness",
+  "medical_room",
+  "retail_area",
+  "waiting_area",
+  "technical_room",
   "other",
 ] as const;
 
@@ -50,6 +81,28 @@ export const ROOM_KIND_LABELS: Record<RoomKind, string> = bg.labels.roomKind;
 export const ROOM_PRIORITY_LABELS: Record<RoomPriority, string> =
   bg.labels.roomPriority;
 
+const LEGACY_ROOM_KIND_ALIASES: Record<string, RoomKind> = {
+  living: "open_living_area",
+  "living-room": "open_living_area",
+  retail: "retail_area",
+  "guest-room": "guest_room",
+  "master-bedroom": "master_bedroom",
+  "home-office": "office",
+  "open-office": "open_office",
+  "meeting-room": "meeting_room",
+  "hotel-room": "hotel_room",
+};
+
+export function normalizeRoomKind(value: string): RoomKind | null {
+  const trimmed = value.trim().toLowerCase();
+
+  if (ROOM_KINDS.includes(trimmed as RoomKind)) {
+    return trimmed as RoomKind;
+  }
+
+  return LEGACY_ROOM_KIND_ALIASES[trimmed] ?? null;
+}
+
 export function isRoomKind(value: string): value is RoomKind {
   return ROOM_KINDS.includes(value as RoomKind);
 }
@@ -59,7 +112,9 @@ export function isRoomPriority(value: string): value is RoomPriority {
 }
 
 export function mapRoomRow(row: RoomRow): Room {
-  if (!isRoomKind(row.room_kind)) {
+  const roomKind = normalizeRoomKind(row.room_kind);
+
+  if (!roomKind) {
     throw new Error(`Invalid room kind: ${row.room_kind}`);
   }
 
@@ -72,7 +127,7 @@ export function mapRoomRow(row: RoomRow): Room {
     project_id: row.project_id,
     room_template_key: row.room_template_key,
     name: row.name,
-    room_kind: row.room_kind,
+    room_kind: roomKind,
     scope_summary: row.scope_summary,
     priority: row.priority,
     current_phase_id: row.current_phase_id,
@@ -81,4 +136,8 @@ export function mapRoomRow(row: RoomRow): Room {
     updated_at: row.updated_at ?? row.created_at,
     deleted_at: row.deleted_at,
   };
+}
+
+export function getRoomKindLabel(roomKind: RoomKind): string {
+  return ROOM_KIND_LABELS[roomKind];
 }

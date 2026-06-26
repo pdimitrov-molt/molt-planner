@@ -4,12 +4,14 @@ import {
   completePhaseSchema,
   type CompletePhaseInput,
 } from "@/features/phases/validation/phase.schema";
+import { ProgressService } from "@/features/progress/service/progress.service";
 import { RoomRepository } from "@/features/rooms/repository/room.repository";
 
 export class PhaseService {
   constructor(
     private readonly phaseRepository: PhaseRepository,
-    private readonly roomRepository: RoomRepository
+    private readonly roomRepository: RoomRepository,
+    private readonly progressService: ProgressService
   ) {}
 
   async completePhase(input: CompletePhaseInput): Promise<Phase> {
@@ -36,6 +38,12 @@ export class PhaseService {
       throw new Error("Room does not belong to this project.");
     }
 
-    return this.phaseRepository.completePhase(validatedInput.phase_id);
+    const completedPhase = await this.phaseRepository.completePhase(
+      validatedInput.phase_id
+    );
+
+    await this.progressService.syncProjectCompletion(validatedInput.project_id);
+
+    return completedPhase;
   }
 }

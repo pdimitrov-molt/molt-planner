@@ -1,4 +1,8 @@
-import type { ProjectType } from "@/features/projects/types/project";
+import type {
+  ProjectCategory,
+  ProjectObjectType,
+  ProjectPackage,
+} from "@/features/projects/types/project";
 
 export type IntakeScopeMode = "manual" | "template";
 
@@ -12,7 +16,9 @@ export interface IntakeScopeInput {
 }
 
 export interface IntakeSimulationInput {
-  project_type: ProjectType;
+  category: ProjectCategory;
+  object_type?: ProjectObjectType;
+  package?: ProjectPackage;
   scope: IntakeScopeInput;
 }
 
@@ -39,8 +45,10 @@ export interface ScheduleFitAssessment {
 }
 
 export interface IntakeSimulationResult {
-  project_type: ProjectType;
-  project_type_label: string;
+  category: ProjectCategory;
+  object_type: ProjectObjectType;
+  package: ProjectPackage;
+  classification_label: string;
   scope_summary: string;
   estimate: IntakeEstimate;
   schedule_fit: ScheduleFitAssessment;

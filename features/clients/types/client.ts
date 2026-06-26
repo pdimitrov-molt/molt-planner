@@ -1,30 +1,25 @@
 import { bg } from "@/src/i18n/bg";
 
 export const PREFERRED_CHANNELS = [
-  "email",
   "phone",
+  "email",
+  "viber",
   "whatsapp",
   "in_person",
 ] as const;
 
-export const DECISION_STYLES = [
-  "fast",
-  "collaborative",
-  "slow",
-  "committee",
-] as const;
-
 export type PreferredChannel = (typeof PREFERRED_CHANNELS)[number];
-export type DecisionStyle = (typeof DECISION_STYLES)[number];
 
 export interface Client {
   id: string;
   display_name: string;
-  contact_email: string | null;
   contact_phone: string | null;
+  contact_email: string | null;
+  contact_viber: string | null;
+  contact_whatsapp: string | null;
+  secondary_contact: string | null;
   preferred_channel: PreferredChannel;
-  decision_style: DecisionStyle;
-  notes: string | null;
+  client_insights: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -35,9 +30,11 @@ export interface ClientRow {
   display_name: string;
   contact_email: string | null;
   contact_phone: string | null;
+  contact_viber: string | null;
+  contact_whatsapp: string | null;
+  secondary_contact: string | null;
   preferred_channel: string;
-  decision_style: string;
-  notes: string | null;
+  client_insights: string | null;
   created_at: string;
   updated_at: string | null;
   deleted_at: string | null;
@@ -46,34 +43,37 @@ export interface ClientRow {
 export const PREFERRED_CHANNEL_LABELS: Record<PreferredChannel, string> =
   bg.labels.preferredChannel;
 
-export const DECISION_STYLE_LABELS: Record<DecisionStyle, string> =
-  bg.labels.decisionStyle;
+const LEGACY_PREFERRED_CHANNEL_ALIASES: Record<string, PreferredChannel> = {
+  phone: "phone",
+  email: "email",
+  viber: "viber",
+  whatsapp: "whatsapp",
+  in_person: "in_person",
+};
+
+export function normalizePreferredChannel(value: string): PreferredChannel | null {
+  const key = value.trim().toLowerCase();
+  return LEGACY_PREFERRED_CHANNEL_ALIASES[key] ?? null;
+}
 
 export function isPreferredChannel(value: string): value is PreferredChannel {
   return PREFERRED_CHANNELS.includes(value as PreferredChannel);
 }
 
-export function isDecisionStyle(value: string): value is DecisionStyle {
-  return DECISION_STYLES.includes(value as DecisionStyle);
-}
-
 export function mapClientRow(row: ClientRow): Client {
-  if (!isPreferredChannel(row.preferred_channel)) {
-    throw new Error(`Invalid preferred channel: ${row.preferred_channel}`);
-  }
-
-  if (!isDecisionStyle(row.decision_style)) {
-    throw new Error(`Invalid decision style: ${row.decision_style}`);
-  }
+  const preferredChannel =
+    normalizePreferredChannel(row.preferred_channel) ?? "email";
 
   return {
     id: row.id,
     display_name: row.display_name,
-    contact_email: row.contact_email,
     contact_phone: row.contact_phone,
-    preferred_channel: row.preferred_channel,
-    decision_style: row.decision_style,
-    notes: row.notes,
+    contact_email: row.contact_email,
+    contact_viber: row.contact_viber ?? null,
+    contact_whatsapp: row.contact_whatsapp ?? null,
+    secondary_contact: row.secondary_contact ?? null,
+    preferred_channel: preferredChannel,
+    client_insights: row.client_insights,
     created_at: row.created_at,
     updated_at: row.updated_at ?? row.created_at,
     deleted_at: row.deleted_at,

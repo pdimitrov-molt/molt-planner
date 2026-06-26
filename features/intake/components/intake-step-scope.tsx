@@ -4,8 +4,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { IntakeScopeInput } from "@/features/intake/types/intake-plan";
-import type { ProjectType } from "@/features/projects/types/project";
-import { getProjectTypeLabel } from "@/features/projects/types/project";
+import {
+  getProjectCategoryLabel,
+  type ProjectCategory,
+} from "@/features/projects/types/project";
 import {
   buildWizardRoomsFromTemplate,
   getRoomTemplateSet,
@@ -14,17 +16,17 @@ import { cn } from "@/lib/utils";
 import { bg } from "@/src/i18n/bg";
 
 interface IntakeStepScopeProps {
-  projectType: ProjectType;
+  category: ProjectCategory;
   value: IntakeScopeInput;
   onChange: (value: IntakeScopeInput) => void;
 }
 
 export function IntakeStepScope({
-  projectType,
+  category,
   value,
   onChange,
 }: IntakeStepScopeProps) {
-  const templateSet = getRoomTemplateSet(projectType);
+  const templateSet = getRoomTemplateSet(category);
 
   function switchMode(mode: IntakeScopeInput["mode"]) {
     if (mode === "manual") {
@@ -37,7 +39,7 @@ export function IntakeStepScope({
       return;
     }
 
-    const defaultRooms = buildWizardRoomsFromTemplate(projectType);
+    const defaultRooms = buildWizardRoomsFromTemplate(category);
 
     onChange({
       mode: "template",
@@ -89,7 +91,7 @@ export function IntakeStepScope({
         >
           <p className="font-medium">{bg.intake.scope.template}</p>
           <p className="text-sm text-muted-foreground">
-            {bg.intake.scope.templateHint(getProjectTypeLabel(projectType))}
+            {bg.intake.scope.templateHint(getProjectCategoryLabel(category))}
           </p>
         </button>
       </div>

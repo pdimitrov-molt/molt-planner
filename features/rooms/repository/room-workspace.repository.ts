@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getPhaseTemplateEstimatedHours } from "@/features/phases/data/phase-templates";
+import { calculateRoomProgress } from "@/features/progress/lib/calculate-progress";
 import {
   isPhaseKind,
   isPhaseStatus,
@@ -27,6 +28,10 @@ export interface RoomWorkspace {
   room_kind_label: string;
   scope_summary: string | null;
   progress_percent: number;
+  completed_phases: number;
+  total_phases: number;
+  is_completed: boolean;
+  remaining_hours: number;
   current_phase_label: string;
   phases: RoomWorkspacePhase[];
 }
@@ -103,15 +108,11 @@ export class RoomWorkspaceRepository {
       };
     });
 
-    const completedCount = workspacePhases.filter(
-      (phase) => phase.status === "completed"
-    ).length;
-    const progressPercent =
-      workspacePhases.length === 0
-        ? 0
-        : Math.round((completedCount / workspacePhases.length) * 100);
-
+    const roomProgress = calculateRoomProgress(workspacePhases);
     const currentPhase = workspacePhases.find((phase) => phase.is_current);
+    const remainingHours = workspacePhases
+      .filter((phase) => phase.status !== "completed")
+      .reduce((total, phase) => total + phase.estimated_hours, 0);
 
     return {
       id: mappedRoom.id,
@@ -121,7 +122,11 @@ export class RoomWorkspaceRepository {
       room_kind_label:
         ROOM_KIND_LABELS[mappedRoom.room_kind as RoomKind] ?? mappedRoom.room_kind,
       scope_summary: mappedRoom.scope_summary,
-      progress_percent: progressPercent,
+      progress_percent: roomProgress.progress_percent,
+      completed_phases: roomProgress.completed_phases,
+      total_phases: roomProgress.total_phases,
+      is_completed: roomProgress.is_completed,
+      remaining_hours: remainingHours,
       current_phase_label: currentPhase?.label ?? "",
       phases: workspacePhases,
     };

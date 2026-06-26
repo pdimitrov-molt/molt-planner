@@ -24,7 +24,7 @@ assert.equal(
 
 const intakePlan = calculateIntakePlan(
   {
-    project_type: "residential",
+    category: "residential",
     scope: {
       mode: "manual",
       site_area: 180,
