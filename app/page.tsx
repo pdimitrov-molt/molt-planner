@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { PageHeader, PageShell } from "@/components/layout/page-shell";
+import { AICommandBar } from "@/features/ai-command-center/components/ai-command-bar";
 import {
   CommandCenterHealth,
   CommandCenterSidebar,
@@ -24,6 +25,8 @@ export default async function HomePage() {
           title={bg.commandCenter.title}
           description={bg.commandCenter.subtitle}
         />
+
+        <AICommandBar />
 
         <CommandCenterDashboard
           critical={critical}
