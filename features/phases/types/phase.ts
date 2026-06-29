@@ -32,6 +32,7 @@ export interface Phase {
   blocker_reason: string | null;
   estimated_hours: number;
   sort_order: number;
+  is_workflow_instance?: boolean;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -48,6 +49,7 @@ export interface PhaseRow {
   blocker_reason: string | null;
   estimated_hours: number | null;
   sort_order: number;
+  is_workflow_instance?: boolean | null;
   created_at: string;
   updated_at: string | null;
   deleted_at: string | null;
@@ -87,6 +89,7 @@ export function mapPhaseRow(row: PhaseRow): Phase {
       row.estimated_hours ?? getPhaseTemplateEstimatedHours(row.phase_kind)
     ),
     sort_order: row.sort_order,
+    is_workflow_instance: row.is_workflow_instance ?? false,
     created_at: row.created_at,
     updated_at: row.updated_at ?? row.created_at,
     deleted_at: row.deleted_at,

@@ -2,18 +2,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2Icon } from "lucide-react";
 
-import { InsetPanel, PageShell, SurfaceCard } from "@/components/layout/page-shell";
+import { PageShell, SurfaceCard } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CompletePhaseButton } from "@/features/phases/components/complete-phase-button";
-import type { PhaseStatus } from "@/features/phases/types/phase";
+import { RoomPhasePipeline } from "@/features/rooms/components/room-phase-pipeline";
 import { getRoomWorkspaceService } from "@/features/rooms/service/room-workspace.service";
-import { PhaseWorkSessionControls } from "@/features/work-sessions/components/phase-work-session-controls";
-import { PhaseWorkSessionHistory } from "@/features/work-sessions/components/phase-work-session-history";
-import { PhaseFocusTarget } from "@/features/work-sessions/components/phase-focus-target";
 import { getActivePhaseSession } from "@/features/work-sessions/lib/get-active-phase-session";
+import {
+  findWorkSessionsByPhaseId,
+  getPhaseWorkSessionHistory,
+  getPhaseWorkStatsByPhaseId,
+} from "@/features/work-sessions/service/cached-work-session-queries";
 import { getWorkSessionService } from "@/features/work-sessions/service/get-work-session-service";
-import { cn } from "@/lib/utils";
 import { bg } from "@/src/i18n/bg";
 
 interface RoomWorkspaceViewProps {
@@ -22,45 +23,35 @@ interface RoomWorkspaceViewProps {
   focusPhaseId?: string;
 }
 
-function phaseVariant(status: string) {
-  switch (status) {
-    case "blocked":
-      return "destructive" as const;
-    case "in_progress":
-      return "default" as const;
-    case "completed":
-      return "secondary" as const;
-    default:
-      return "outline" as const;
-  }
-}
-
-function phaseStatusLabel(status: PhaseStatus): string {
-  return bg.labels.phaseStatus[status];
-}
-
 export async function RoomWorkspaceView({
   projectId,
   roomId,
   focusPhaseId,
 }: RoomWorkspaceViewProps) {
-  const service = await getRoomWorkspaceService();
-  const workSessionService = await getWorkSessionService();
+  const [service, workSessionService] = await Promise.all([
+    getRoomWorkspaceService(),
+    getWorkSessionService(),
+  ]);
+
   const room = await service.getRoomWorkspace(projectId, roomId);
 
   if (!room) {
     notFound();
   }
 
-  const [runningSession, phaseSessionGroups, phaseHistoryGroups] = await Promise.all([
-    workSessionService.findRunningSession(),
-    Promise.all(
-      room.phases.map((phase) =>
-        workSessionService.findByPhase({ phase_id: phase.id })
-      )
-    ),
-    Promise.all(room.phases.map((phase) => workSessionService.getPhaseHistory(phase.id))),
-  ]);
+  const phaseIds = room.phases.map((phase) => phase.id);
+
+  const [runningSession, phaseSessionGroups, phaseHistoryGroups, phaseStatsGroups] =
+    await Promise.all([
+      workSessionService.findRunningSession(),
+      Promise.all(phaseIds.map((phaseId) => findWorkSessionsByPhaseId(phaseId))),
+      Promise.all(phaseIds.map((phaseId) => getPhaseWorkSessionHistory(phaseId))),
+      Promise.all(
+        room.phases.map((phase) =>
+          getPhaseWorkStatsByPhaseId(phase.id, phase.estimated_hours)
+        )
+      ),
+    ]);
 
   const currentPhase = room.phases.find((phase) => phase.is_current);
 
@@ -141,81 +132,22 @@ export async function RoomWorkspaceView({
           </SurfaceCard>
         </header>
 
-        <SurfaceCard className="flex flex-col gap-8 rounded-2xl shadow-sm">
+        <SurfaceCard className="flex flex-col gap-6 rounded-2xl shadow-sm">
           <div className="flex flex-col gap-2">
             <h2 className="text-title">{bg.room.pipelineTitle}</h2>
             <p className="text-body">{bg.room.pipelineSubtitle}</p>
           </div>
 
-          <div className="overflow-x-auto pb-2">
-            <div className="flex min-w-max gap-4">
-              {room.phases.map((phase, index) => {
-                const activeSession = getActivePhaseSession(
-                  phaseSessionGroups[index] ?? []
-                );
-
-                return (
-                <PhaseFocusTarget
-                  key={phase.id}
-                  phaseId={phase.id}
-                  focusPhaseId={focusPhaseId}
-                >
-                <InsetPanel
-                  className={cn(
-                    "flex w-56 shrink-0 flex-col gap-4 rounded-2xl p-5 shadow-sm transition-colors",
-                    phase.is_current
-                      ? "bg-accent ring-1 ring-primary/15"
-                      : "hover:bg-muted/40"
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        {bg.room.phaseStep(index + 1, room.phases.length)}
-                      </span>
-                      <p className="text-section-title leading-snug">{phase.label}</p>
-                    </div>
-                    {phase.is_current ? (
-                      <Badge variant="default">{bg.room.current}</Badge>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-auto grid gap-2 text-sm">
-                    <Badge variant={phaseVariant(phase.status)} className="w-fit">
-                      {phaseStatusLabel(phase.status)}
-                    </Badge>
-                    <span className="text-muted-foreground">
-                      {phase.status === "completed"
-                        ? bg.room.logged
-                        : bg.room.estimated}{" "}
-                      {phase.estimated_hours}
-                      {bg.common.hoursShort}
-                    </span>
-                  </div>
-
-                  <PhaseWorkSessionControls
-                    projectId={projectId}
-                    roomId={roomId}
-                    phaseId={phase.id}
-                    activeSession={activeSession}
-                    runningSession={runningSession}
-                  />
-
-                  {phase.blocker_reason ? (
-                    <p className="text-sm text-muted-foreground">{phase.blocker_reason}</p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">{bg.room.phaseDetailHint}</p>
-                  )}
-
-                  <PhaseWorkSessionHistory
-                    entries={phaseHistoryGroups[index] ?? []}
-                  />
-                </InsetPanel>
-                </PhaseFocusTarget>
-              );
-              })}
-            </div>
-          </div>
+          <RoomPhasePipeline
+            projectId={projectId}
+            roomId={roomId}
+            phases={room.phases}
+            focusPhaseId={focusPhaseId}
+            runningSession={runningSession}
+            phaseSessions={phaseSessionGroups}
+            phaseHistory={phaseHistoryGroups}
+            phaseStats={phaseStatsGroups}
+          />
         </SurfaceCard>
       </PageShell>
     </main>

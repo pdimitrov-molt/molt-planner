@@ -89,6 +89,7 @@ function mapRoomPhases(room: WorkspaceSourceRoom) {
   return room.phases.map((phase) => ({
     id: phase.id,
     label: PHASE_KIND_LABELS[phase.phase_kind],
+    phase_kind: phase.phase_kind,
     status: phase.status,
     is_current: phase.id === room.current_phase_id,
     estimated_hours:

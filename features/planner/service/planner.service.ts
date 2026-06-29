@@ -6,7 +6,7 @@ import {
   type PhaseWorkloadInput,
 } from "@/features/planner/capacity-calculator";
 import type { StudioCapacityPlan } from "@/features/planner/types/capacity-plan";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCachedSupabaseServerClient } from "@/lib/server/request-cache";
 import { bg } from "@/src/i18n/bg";
 import { formatLongDate } from "@/src/i18n/format";
 
@@ -146,6 +146,6 @@ function formatNextProjectLabel(dateValue: string, remainingHours: number) {
 }
 
 export async function getPlannerService(): Promise<PlannerService> {
-  const database = await createSupabaseServerClient();
+  const database = await getCachedSupabaseServerClient();
   return new PlannerService(new PlannerRepository(database));
 }

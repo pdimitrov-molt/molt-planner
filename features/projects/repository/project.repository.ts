@@ -40,22 +40,34 @@ export class ProjectRepository {
       .select("*, clients(display_name)")
       .is("deleted_at", null);
   }
-
   async getNextProjectNumber(): Promise<string> {
     const year = new Date().getFullYear();
     const yearPrefix = String(year).slice(-2);
-
-    const { count, error } = await this.database
+  
+    const { data, error } = await this.database
       .from("projects")
-      .select("id", { count: "exact", head: true })
+      .select("project_number")
       .like("project_number", `${yearPrefix}%`)
-      .is("deleted_at", null);
-
+      .is("deleted_at", null)
+      .order("project_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+  
     if (error) {
       throw new Error(error.message);
     }
-
-    return formatProjectNumber(year, (count ?? 0) + 1);
+  
+    let nextSequence = 1;
+  
+    if (data?.project_number) {
+      const currentSequence = Number(data.project_number.substring(2));
+  
+      if (!Number.isNaN(currentSequence)) {
+        nextSequence = currentSequence + 1;
+      }
+    }
+  
+    return formatProjectNumber(year, nextSequence);
   }
 
   async findAllWithClient(): Promise<ProjectWithClient[]> {

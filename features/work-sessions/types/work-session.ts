@@ -10,7 +10,7 @@ export type WorkSessionStatus = (typeof WORK_SESSION_STATUSES)[number];
 export interface WorkSession {
   id: string;
   project_id: string;
-  room_id: string;
+  room_id: string | null;
   phase_id: string;
   started_at: string;
   ended_at: string | null;
@@ -27,7 +27,7 @@ export interface WorkSession {
 export interface WorkSessionRow {
   id: string;
   project_id: string;
-  room_id: string;
+  room_id: string | null;
   phase_id: string;
   started_at: string;
   ended_at: string | null;

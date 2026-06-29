@@ -1,8 +1,8 @@
 import { ProgressRepository } from "@/features/progress/repository/progress.repository";
 import { ProgressService } from "@/features/progress/service/progress.service";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCachedSupabaseServerClient } from "@/lib/server/request-cache";
 
 export async function getProgressService(): Promise<ProgressService> {
-  const database = await createSupabaseServerClient();
+  const database = await getCachedSupabaseServerClient();
   return new ProgressService(new ProgressRepository(database));
 }

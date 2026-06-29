@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SettingsIcon } from "lucide-react";
 
 import { ProjectStatusBadge } from "@/features/projects/components/project-status-badge";
 import { PROJECT_PRIORITY_LABELS } from "@/features/projects/types/project";
@@ -38,6 +39,13 @@ export function WorkspaceHeader({ workspace }: WorkspaceHeaderProps) {
               PROJECT_PRIORITY_LABELS[workspace.priority]
             )}
           </Badge>
+          <Link
+            href={`/projects/${workspace.id}/settings`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+          >
+            <SettingsIcon className="size-3.5" />
+            {bg.projects.workspace.settingsLink}
+          </Link>
         </div>
 
         <h1 className="text-display">{workspace.name}</h1>

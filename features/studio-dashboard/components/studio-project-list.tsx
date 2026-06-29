@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { StudioProjectTimeline } from "@/features/studio-dashboard/components/studio-project-timeline";
-import { StudioRoomTable } from "@/features/studio-dashboard/components/studio-room-table";
+import { StudioWorkflowGroupsTable } from "@/features/studio-dashboard/components/studio-workflow-groups-table";
 import {
   readExpandedProjectId,
   writeExpandedProjectId,
@@ -98,7 +98,7 @@ export function StudioProjectRowCard({
 
       {expanded ? (
         <div className="border-t border-border/60 px-4 py-3">
-          <StudioRoomTable rooms={project.rooms} />
+          <StudioWorkflowGroupsTable groups={project.workflow_groups} />
         </div>
       ) : null}
     </article>

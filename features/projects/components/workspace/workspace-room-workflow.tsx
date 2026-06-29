@@ -3,6 +3,7 @@ import { StarIcon } from "lucide-react";
 import type { ProjectWorkspace } from "@/features/projects/types/project-workspace";
 import { WorkspaceRoomAccordion } from "@/features/projects/components/workspace/workspace-room-accordion";
 import { getActivePhaseSession } from "@/features/work-sessions/lib/get-active-phase-session";
+import { findWorkSessionsByPhaseId } from "@/features/work-sessions/service/cached-work-session-queries";
 import { getWorkSessionService } from "@/features/work-sessions/service/get-work-session-service";
 import type { WorkSession } from "@/features/work-sessions/types/work-session";
 import { bg } from "@/src/i18n/bg";
@@ -25,26 +26,24 @@ export async function WorkspaceRoomWorkflow({
   workspace,
 }: WorkspaceRoomWorkflowProps) {
   const workSessionService = await getWorkSessionService();
-  const runningSession = await workSessionService.findRunningSession();
 
-  const roomCurrentPhaseSessions = new Map<string, WorkSession | null>();
+  const [runningSession, roomSessionEntries] = await Promise.all([
+    workSessionService.findRunningSession(),
+    Promise.all(
+      workspace.rooms.map(async (room) => {
+        const currentPhaseId = resolveCurrentPhaseId(room);
 
-  await Promise.all(
-    workspace.rooms.map(async (room) => {
-      const currentPhaseId = resolveCurrentPhaseId(room);
+        if (!currentPhaseId) {
+          return [room.id, null] as const;
+        }
 
-      if (!currentPhaseId) {
-        roomCurrentPhaseSessions.set(room.id, null);
-        return;
-      }
+        const sessions = await findWorkSessionsByPhaseId(currentPhaseId);
+        return [room.id, getActivePhaseSession(sessions)] as const;
+      })
+    ),
+  ]);
 
-      const sessions = await workSessionService.findByPhase({
-        phase_id: currentPhaseId,
-      });
-
-      roomCurrentPhaseSessions.set(room.id, getActivePhaseSession(sessions));
-    })
-  );
+  const roomCurrentPhaseSessions = new Map<string, WorkSession | null>(roomSessionEntries);
 
   const sortedRooms = [...workspace.rooms].sort((left, right) => {
     if (left.is_focus !== right.is_focus) {

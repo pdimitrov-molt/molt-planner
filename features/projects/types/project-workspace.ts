@@ -34,6 +34,7 @@ export interface WorkspaceWaitingItem {
 export interface WorkspaceRoomPhaseStep {
   id: string;
   label: string;
+  phase_kind: PhaseKind;
   status: PhaseStatus;
   is_current: boolean;
   estimated_hours: number;

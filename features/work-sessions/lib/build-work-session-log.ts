@@ -43,7 +43,9 @@ export function extractWorkSessionContext(
 ): WorkSessionContextSnapshot {
   return {
     project_name: resolveJoinedName(row.projects, bg.common.projectFallback),
-    room_name: resolveJoinedName(row.rooms, bg.common.roomFallback),
+    room_name: row.room_id
+      ? resolveJoinedName(row.rooms, bg.common.roomFallback)
+      : null,
     phase_kind: resolvePhaseKind(row.phases),
   };
 }
@@ -181,16 +183,20 @@ export function mapPhaseWorkSessionHistoryEntry(
 ): PhaseWorkSessionHistoryEntry {
   const session = mapWorkSessionRow(row);
   const durationMinutes = getSessionDurationMinutes(session);
-  const dateSource = session.ended_at ?? session.started_at;
+  const dateSource = session.started_at;
 
   return {
     id: session.id,
-    date_label: format(parseISO(dateSource), "d MMM yyyy, HH:mm", {
+    date_label: format(parseISO(dateSource), "d MMM", {
       locale: bgLocale,
     }),
+    time_range_label: formatSessionTimeRange(session),
     worked_duration_label: formatWorkDurationMinutes(durationMinutes),
     note: session.note,
     next_step: session.next_step,
     blocker: session.blocker,
+    started_at: session.started_at,
+    ended_at: session.ended_at,
+    duration_minutes: durationMinutes,
   };
 }

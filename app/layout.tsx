@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bg" className={`${dmSans.variable} ${geistMono.variable} h-full`}>
+    <html lang="bg" className={`dark ${dmSans.variable} ${geistMono.variable} h-full`}>
       <body className="min-h-full">
         <AppShell>{children}</AppShell>
         <Toaster richColors closeButton />

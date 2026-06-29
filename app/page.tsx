@@ -1,42 +1,43 @@
+import { Suspense } from "react";
+
 import { PageHeader, PageShell } from "@/components/layout/page-shell";
-import { StudioDashboard } from "@/features/studio-dashboard/components/studio-dashboard";
-import { buildStudioDashboard } from "@/features/studio-dashboard/lib/build-studio-dashboard";
-import { getProjectService } from "@/features/projects/service/get-project-service";
-import { getProjectWorkspaceService } from "@/features/projects/service/project-workspace.service";
-import type { ProjectWorkspace } from "@/features/projects/types/project-workspace";
+import {
+  CommandCenterHealth,
+  CommandCenterSidebar,
+} from "@/features/studio-dashboard/components/command-center-background";
+import {
+  CommandCenterHealthFallback,
+  CommandCenterSidebarFallback,
+} from "@/features/studio-dashboard/components/command-center-background-fallback";
+import { CommandCenterDashboard } from "@/features/studio-dashboard/components/command-center-dashboard";
+import { loadCommandCenterCritical } from "@/features/studio-dashboard/lib/load-command-center";
 import { bg } from "@/src/i18n/bg";
 
 export default async function HomePage() {
-  const projectService = await getProjectService();
-  const workspaceService = await getProjectWorkspaceService();
-
-  const projects = await projectService.listProjectsWithClient();
-  const visibleProjects = projects.filter(
-    (project) => project.engagement_status !== "archived"
-  );
-
-  const workspaces = await Promise.all(
-    visibleProjects.map((project) =>
-      workspaceService.getProjectWorkspace(project.id)
-    )
-  ).then((results) =>
-    results.filter((workspace): workspace is ProjectWorkspace => workspace !== null)
-  );
-
-  const view = buildStudioDashboard({
-    projects: visibleProjects,
-    workspaces,
-  });
+  const critical = await loadCommandCenterCritical();
 
   return (
     <main className="min-h-screen">
-      <PageShell>
+      <PageShell width="full">
         <PageHeader
-          title={bg.studioDashboard.title}
-          description={bg.studioDashboard.subtitle}
+          eyebrow="Studio OS"
+          title={bg.commandCenter.title}
+          description={bg.commandCenter.subtitle}
         />
 
-        <StudioDashboard view={view} />
+        <CommandCenterDashboard
+          critical={critical}
+          health={
+            <Suspense fallback={<CommandCenterHealthFallback />}>
+              <CommandCenterHealth critical={critical} />
+            </Suspense>
+          }
+          sidebar={
+            <Suspense fallback={<CommandCenterSidebarFallback />}>
+              <CommandCenterSidebar />
+            </Suspense>
+          }
+        />
       </PageShell>
     </main>
   );

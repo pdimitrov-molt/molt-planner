@@ -5,9 +5,15 @@ import { bg } from "@/src/i18n/bg";
 
 interface WorkspaceProgressHeroProps {
   workspace: ProjectWorkspace;
+  workflowProgress?: number;
 }
 
-export function WorkspaceProgressHero({ workspace }: WorkspaceProgressHeroProps) {
+export function WorkspaceProgressHero({
+  workspace,
+  workflowProgress,
+}: WorkspaceProgressHeroProps) {
+  const progress = workflowProgress ?? workspace.overall_completion_percent;
+
   return (
     <SurfaceCard className="rounded-3xl bg-emerald-500/10 p-8 shadow-sm">
       <div className="grid gap-6">
@@ -15,7 +21,7 @@ export function WorkspaceProgressHero({ workspace }: WorkspaceProgressHeroProps)
           <div className="grid gap-2">
             <p className="text-eyebrow">{bg.progress.projectLabel}</p>
             <p className="text-5xl font-semibold tracking-tight tabular-nums">
-              {workspace.overall_completion_percent}%
+              {progress}%
             </p>
           </div>
           <div className="grid gap-1 text-right text-sm">
@@ -34,7 +40,7 @@ export function WorkspaceProgressHero({ workspace }: WorkspaceProgressHeroProps)
           </div>
         </div>
 
-        <Progress value={workspace.overall_completion_percent} className="h-3" />
+        <Progress value={progress} className="h-3" />
       </div>
     </SurfaceCard>
   );

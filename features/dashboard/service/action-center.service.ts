@@ -4,37 +4,31 @@ import type {
   PausedWorkSessionItem,
 } from "@/features/dashboard/lib/build-action-center";
 import { getProjectService } from "@/features/projects/service/get-project-service";
-import { getProjectWorkspaceService } from "@/features/projects/service/project-workspace.service";
+import { loadProjectWorkspaces } from "@/features/projects/service/project-workspace.service";
 import type { ProjectWorkspace } from "@/features/projects/types/project-workspace";
 import { getWorkSessionService } from "@/features/work-sessions/service/get-work-session-service";
+import { findWorkSessionsByPhaseId } from "@/features/work-sessions/service/cached-work-session-queries";
 
 export class ActionCenterService {
   async getActionCenterView(): Promise<ActionCenterView> {
-    const projectService = await getProjectService();
-    const workspaceService = await getProjectWorkspaceService();
-    const workSessionService = await getWorkSessionService();
+    const [projectService, workSessionService] = await Promise.all([
+      getProjectService(),
+      getWorkSessionService(),
+    ]);
 
     const projects = await projectService.listProjectsWithClient();
     const activeProjects = projects.filter(
       (project) => project.engagement_status === "active"
     );
+    const activeProjectIds = activeProjects.map((project) => project.id);
 
     const [continueWorking, runningSession, workspaces] = await Promise.all([
       workSessionService.getContinueWorking(),
       workSessionService.findRunningSession(),
-      Promise.all(
-        activeProjects.map((project) =>
-          workspaceService.getProjectWorkspace(project.id)
-        )
-      ).then((results) =>
-        results.filter((workspace): workspace is ProjectWorkspace => workspace !== null)
-      ),
+      loadProjectWorkspaces(activeProjectIds),
     ]);
 
-    const pausedSessions = await collectPausedSessions(
-      workspaces,
-      workSessionService
-    );
+    const pausedSessions = await collectPausedSessions(workspaces);
 
     return buildActionCenter({
       workspaces,
@@ -47,8 +41,7 @@ export class ActionCenterService {
 }
 
 async function collectPausedSessions(
-  workspaces: ProjectWorkspace[],
-  workSessionService: Awaited<ReturnType<typeof getWorkSessionService>>
+  workspaces: ProjectWorkspace[]
 ): Promise<PausedWorkSessionItem[]> {
   const pausedSessions: PausedWorkSessionItem[] = [];
 
@@ -61,9 +54,7 @@ async function collectPausedSessions(
           return;
         }
 
-        const sessions = await workSessionService.findByPhase({
-          phase_id: currentPhase.id,
-        });
+        const sessions = await findWorkSessionsByPhaseId(currentPhase.id);
         const pausedSession = sessions.find((session) => session.status === "paused");
 
         if (!pausedSession) {

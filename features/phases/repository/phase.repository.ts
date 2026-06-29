@@ -104,6 +104,16 @@ export class PhaseRepository {
       throw new Error(completeError.message);
     }
 
+    if (phase.is_workflow_instance) {
+      const updatedPhase = await this.findById(phaseId);
+
+      if (!updatedPhase) {
+        throw new Error("Completed phase could not be loaded.");
+      }
+
+      return updatedPhase;
+    }
+
     const { data: roomPhases, error: roomPhasesError } = await this.database
       .from("phases")
       .select("*")

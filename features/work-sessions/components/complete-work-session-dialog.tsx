@@ -15,6 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { completeWorkSessionAction } from "@/features/work-sessions/actions/work-session.actions";
+import { isOptimisticWorkSessionId } from "@/features/work-sessions/lib/optimistic-work-session";
 import { bg } from "@/src/i18n/bg";
 
 interface CompleteWorkSessionDialogProps {
@@ -22,6 +23,8 @@ interface CompleteWorkSessionDialogProps {
   onOpenChange: (open: boolean) => void;
   sessionId: string;
   onCompleted: () => void;
+  onOptimisticComplete?: () => void;
+  onCompleteFailed?: () => void;
 }
 
 export function CompleteWorkSessionDialog({
@@ -29,6 +32,8 @@ export function CompleteWorkSessionDialog({
   onOpenChange,
   sessionId,
   onCompleted,
+  onOptimisticComplete,
+  onCompleteFailed,
 }: CompleteWorkSessionDialogProps) {
   const [note, setNote] = useState("");
   const [nextStep, setNextStep] = useState("");
@@ -49,8 +54,18 @@ export function CompleteWorkSessionDialog({
     onOpenChange(nextOpen);
   }
 
+  const sessionNotReady = isOptimisticWorkSessionId(sessionId);
+
   function handleSubmit() {
+    onOptimisticComplete?.();
+
     startTransition(async () => {
+      if (sessionNotReady) {
+        onCompleteFailed?.();
+        toast.error(bg.workSession.completeFailed);
+        return;
+      }
+
       const result = await completeWorkSessionAction({
         id: sessionId,
         note: note.trim() ? note : undefined,
@@ -59,6 +74,7 @@ export function CompleteWorkSessionDialog({
       });
 
       if (!result.success) {
+        onCompleteFailed?.();
         toast.error(result.error);
         return;
       }
@@ -130,7 +146,11 @@ export function CompleteWorkSessionDialog({
           >
             {bg.workSession.cancel}
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={isPending}>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isPending || sessionNotReady}
+          >
             {isPending ? bg.workSession.completing : bg.workSession.complete}
           </Button>
         </DialogFooter>

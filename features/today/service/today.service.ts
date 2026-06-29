@@ -1,32 +1,26 @@
 import { buildTodayView } from "@/features/today/lib/build-today-view";
 import type { TodayView } from "@/features/today/types/today-view";
 import { getPlannerService } from "@/features/planner/service/planner.service";
-import { getProjectService } from "@/features/projects/service/get-project-service";
-import { getProjectWorkspaceService } from "@/features/projects/service/project-workspace.service";
-import type { ProjectWorkspace } from "@/features/projects/types/project-workspace";
+import { loadProjectWorkspaces } from "@/features/projects/service/project-workspace.service";
+import {
+  filterActiveProjects,
+  loadProjectsWithClient,
+} from "@/features/studio-data/lib/load-studio-data";
 
 export class TodayService {
   async getTodayView(): Promise<TodayView> {
-    const projectService = await getProjectService();
-    const workspaceService = await getProjectWorkspaceService();
-    const plannerService = await getPlannerService();
-
-    const [projects, capacityPlan] = await Promise.all([
-      projectService.listProjectsWithClient(),
-      plannerService.getStudioCapacityPlan(),
+    const [projects, plannerService] = await Promise.all([
+      loadProjectsWithClient(),
+      getPlannerService(),
     ]);
 
-    const activeProjects = projects.filter(
-      (project) => project.engagement_status === "active"
-    );
+    const activeProjects = filterActiveProjects(projects);
+    const activeProjectIds = activeProjects.map((project) => project.id);
 
-    const workspaces = (
-      await Promise.all(
-        activeProjects.map((project) =>
-          workspaceService.getProjectWorkspace(project.id)
-        )
-      )
-    ).filter((workspace): workspace is ProjectWorkspace => workspace !== null);
+    const [workspaces, capacityPlan] = await Promise.all([
+      loadProjectWorkspaces(activeProjectIds),
+      plannerService.getStudioCapacityPlan(),
+    ]);
 
     return buildTodayView({
       workspaces,

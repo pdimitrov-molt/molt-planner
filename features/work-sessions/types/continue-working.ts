@@ -2,8 +2,8 @@ export interface ContinueWorkingSession {
   session_id: string;
   project_id: string;
   project_name: string;
-  room_id: string;
-  room_name: string;
+  room_id: string | null;
+  room_name: string | null;
   phase_id: string;
   phase_label: string;
   started_at: string;

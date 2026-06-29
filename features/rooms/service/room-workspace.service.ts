@@ -1,6 +1,6 @@
 import { RoomWorkspaceRepository } from "@/features/rooms/repository/room-workspace.repository";
 import type { RoomWorkspace } from "@/features/rooms/repository/room-workspace.repository";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCachedSupabaseServerClient } from "@/lib/server/request-cache";
 
 export class RoomWorkspaceService {
   constructor(private readonly repository: RoomWorkspaceRepository) {}
@@ -14,6 +14,6 @@ export class RoomWorkspaceService {
 }
 
 export async function getRoomWorkspaceService(): Promise<RoomWorkspaceService> {
-  const database = await createSupabaseServerClient();
+  const database = await getCachedSupabaseServerClient();
   return new RoomWorkspaceService(new RoomWorkspaceRepository(database));
 }

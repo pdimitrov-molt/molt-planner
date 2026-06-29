@@ -3,10 +3,10 @@ import { cn } from "@/lib/utils";
 
 export const TIMELINE_DOT_STYLES: Record<StudioTimelineStepState, string> = {
   completed: "bg-emerald-500 ring-emerald-500/20",
-  current: "bg-blue-500 ring-blue-500/20",
+  current: "bg-blue-500 ring-4 ring-blue-500/25",
   waiting: "bg-orange-500 ring-orange-500/20",
   overdue: "bg-red-500 ring-red-500/20",
-  future: "bg-muted-foreground/30 ring-border",
+  future: "border-2 border-muted-foreground/35 bg-background ring-0",
 };
 
 export const TIMELINE_LABEL_STYLES: Record<StudioTimelineStepState, string> = {
@@ -26,7 +26,10 @@ export const TIMELINE_LINE_STYLES: Record<StudioTimelineStepState, string> = {
 };
 
 export function timelineDotClassName(state: StudioTimelineStepState): string {
-  return cn("size-2.5 shrink-0 rounded-full ring-4", TIMELINE_DOT_STYLES[state]);
+  return cn(
+    "size-2.5 shrink-0 rounded-full",
+    state === "future" ? TIMELINE_DOT_STYLES[state] : cn("ring-4", TIMELINE_DOT_STYLES[state])
+  );
 }
 
 export function timelineLabelClassName(state: StudioTimelineStepState): string {

@@ -4,8 +4,8 @@ export interface TodayWorkSessionEntry {
   id: string;
   project_id: string;
   project_name: string;
-  room_id: string;
-  room_name: string;
+  room_id: string | null;
+  room_name: string | null;
   phase_id: string;
   phase_label: string;
   started_at: string;
@@ -28,16 +28,20 @@ export interface TodayWorkSummary {
 export interface PhaseWorkSessionHistoryEntry {
   id: string;
   date_label: string;
+  time_range_label: string;
   worked_duration_label: string;
   note: string | null;
   next_step: string | null;
   blocker: string | null;
+  started_at: string;
+  ended_at: string | null;
+  duration_minutes: number;
 }
 
 export interface WorkSessionWithContextRow {
   id: string;
   project_id: string;
-  room_id: string;
+  room_id: string | null;
   phase_id: string;
   started_at: string;
   ended_at: string | null;
@@ -56,6 +60,6 @@ export interface WorkSessionWithContextRow {
 
 export interface WorkSessionContextSnapshot {
   project_name: string;
-  room_name: string;
+  room_name: string | null;
   phase_kind: string;
 }
